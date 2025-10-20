@@ -21,37 +21,37 @@ jobs:
         with:
           node-version: 20
 
-      # Etapa 3: Instalar dependências
+      # Etapa 3: Instalar dependências de forma segura
+      # Usamos 'npm ci' em vez de 'npm install' para garantir builds consistentes
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      # Etapa 4: Build da extensão
+      # Etapa 4 (NOVA): Instalar os navegadores do Playwright
+   
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # Etapa 5: Build da extensão (já cria o .zip em dist/)
       - name: Build extension
         run: npm run build
 
-      # Etapa 5: Rodar testes E2E com Playwright
+      # Etapa 6: Rodar testes E2E com Playwright
       - name: Run Playwright tests
         run: npx playwright test
         env:
           CI: true
 
-      # Etapa 6: Gerar relatório Playwright
+      # Etapa 7: Publicar o relatório do Playwright
       - name: Upload Playwright report
-        if: always()
+        if: always() # Executa mesmo se os testes falharem
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report/
 
-      # Etapa 7: Empacotar extensão (ZIP)
-      - name: Create extension zip
-        run: |
-          mkdir -p dist
-          zip -r dist/extension.zip manifest.json src icons
-        shell: bash
-
-      # Etapa 8: Publicar o artefato ZIP
+      # Etapa 8: Publicar o artefato ZIP gerado pelo script de build
       - name: Upload packaged extension
+        if: success() # Executa apenas se os passos anteriores passarem
         uses: actions/upload-artifact@v4
         with:
           name: extension-dist
